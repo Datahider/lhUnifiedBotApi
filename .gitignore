@@ -1,0 +1,4 @@
+/secrets.php
+/lhUnifiedBotApi/classes/lhTelegramAPI.php
+/lhUnifiedBotApi/interface/lhFacebookSendAPIInterface.php
+/lhUnifiedBotApi/interface/lhTelegramAPIInterface.php
