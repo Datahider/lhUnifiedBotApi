@@ -6,32 +6,52 @@
  * and open the template in the editor.
  */
 
+define('LH_SKIP_SEND_TESTS', true);
+
 require_once 'secrets.php';
 require_once 'lhUnifiedBotApi/classes/lhUBA.php';
 
-echo "Проверка отправки в Телеграм\n";
-echo 'Введите полученный код> ';
 $uba = new lhUBA($mysecrets);
 
-$code = rand();
-$uba->sendTextWithHints($mytgchatid, ['text' => "Код: $code", 'hints' => ['Кнопка1', 'Кнопка2']]);
+if (!defined('LH_SKIP_SEND_TESTS')) {
+    echo "Проверка отправки в Телеграм\n";
+    echo 'Введите полученный код> ';
 
-$user_said = trim(fread(STDIN, 256));
+    $code = rand();
+    $uba->sendTextWithHints($mytgchatid, ['text' => "Код: $code", 'hints' => ['Кнопка1', 'Кнопка2']]);
 
-if ($user_said != $code) {
-    echo "FAIL!!! - Ожидалось \"$code\", получено \"$user_said\"\n";
+    $user_said = trim(fread(STDIN, 256));
+
+    if ($user_said != $code) {
+        echo "FAIL!!! - Ожидалось \"$code\", получено \"$user_said\"\n";
+    }
+    echo "Ok\n";
+
+    echo "Проверка отправки в Фейсбук\n";
+    echo "Введите полученный код> ";
+    $code = rand();
+
+    $uba->sendTextWithHints($myfbchatid, ['text' => "Код: $code", 'hints' => ['Кнопка1', 'Кнопка2']]);
+
+    $user_said = trim(fread(STDIN, 256));
+
+    if ($user_said != $code) {
+        echo "FAIL!!! - Ожидалось \"$code\", получено \"$user_said\"\n";
+    }
+    echo "Ok\n";
 }
-echo "Ok\n";
 
-echo "Проверка отправки в Фейсбук\n";
-echo "Введите полученный код> ";
-$code = rand();
-
-$uba->sendTextWithHints($myfbchatid, ['text' => "Код: $code", 'hints' => ['Кнопка1', 'Кнопка2']]);
-
-$user_said = trim(fread(STDIN, 256));
-
-if ($user_said != $code) {
-    echo "FAIL!!! - Ожидалось \"$code\", получено \"$user_said\"\n";
+echo 'Проверка getUserData';
+$user_data = $uba->getUserData($mytgchatid);
+if ($user_data['full_name'] != 'Петр Бакулин') {
+    echo "FAIL!!! - Ожидалось \"Петр Бакулин\", получено \"$user_data[full_name]\"\n";
+    die();
 }
-echo "Ok\n";
+echo '.';
+$user_data = $uba->getUserData($myfbchatid);
+if ($user_data['full_name'] != 'Петр Бакулин') {
+    echo "FAIL!!! - Ожидалось \"Петр Бакулин\", получено \"$user_data[full_name]\"\n";
+    die();
+}
+echo '.';
+echo "ok\n";

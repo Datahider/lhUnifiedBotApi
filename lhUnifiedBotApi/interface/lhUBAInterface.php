@@ -14,12 +14,12 @@
 interface lhUBAInterface {
     
     /**
-     * __construct - cоздает экземпляр объекта универсального интерфейса ботов
+     * __construct - creates an instance of Unified Bot Api Object
      * 
-     * @param Array $known_secrets - ассоциативный массив содержащий токены
-     *      поддерживаемых платформ. Индексы массива:
-     *      tgu - бот токен телеграма
-     *      fbu - токен доступа к странице фейсбука
+     * @param Array $known_secrets - associative array that contains tokens
+     *      of supported platforms. Array indexes:
+     *      tgu - bot token for access Telegram bot API
+     *      fbu - Page access token for Facebook App
      */
     public function __construct($known_secrets);
     
@@ -35,5 +35,10 @@ interface lhUBAInterface {
      */
     public function sendTextWithHints($prefixed_recipient, $message_data);
 
-    
+    /**
+     * getUserData - retrives data of an user
+     * 
+     * @param type $prefixed_user_id
+     */
+    public function getUserData($prefixed_user_id);
 }

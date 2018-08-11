@@ -35,6 +35,49 @@ class lhUBA implements lhUBAInterface {
         }
     }
     
+    public function getUserData($prefixed_user_id) {
+        if (preg_match("/^(tgu|fbu)(.*)$/",  $prefixed_user_id, $matches)) {
+            switch ($matches[1]) {
+                case 'tgu':
+                    return $this->getTGUserData($matches[2]);
+                case 'fbu':
+                    return $this->getFBUserData($matches[2]);
+                default:
+                    throw new Exception("Unknown user prefix");
+            }
+        }    
+    }
+    
+    protected function getTGUserData($user_id) {
+        $raw_data = $this->apiQueryTG('getChat', ['chat_id' =>$user_id]);
+        if (!$raw_data->ok) {
+            throw new Exception($raw_data->description, $raw_data->error_code);
+        }
+        $user_data['first_name'] = $raw_data->result->first_name;
+        $user_data['last_name'] = $raw_data->result->last_name;
+        switch ($raw_data->result->type) {
+            case 'private':
+                $user_data['full_name'] = "$user_data[first_name] $user_data[last_name]";
+                break;
+            case 'group':
+                $user_data['full_name'] = $raw_data->result->title;
+                break;
+        }
+        return $user_data;
+    }
+    
+    protected function getFBUserData($psid) {
+        $raw_data = $this->apiGetProfileFB($psid);
+        if (isset($raw_data->error)) {
+            throw new Exception($raw_data->error->message, $raw_data->error->code);
+        }
+        $user_data['first_name'] = $raw_data->first_name;
+        $user_data['last_name'] = $raw_data->last_name;
+        $user_data['full_name'] = "$user_data[first_name] $user_data[last_name]";
+        return $user_data;
+    }
+
+
     protected function sendMessageTG($chat, $message_data) {
         $api_result = $this->apiQueryTG('sendMessage', [
             'text' => $message_data['text'],
@@ -66,7 +109,7 @@ class lhUBA implements lhUBAInterface {
         } else {
             $send_data['message'] = [ 'text' => $message_data['text'] ];
         }
-        $api_result = $this->apiQueryFB($send_data);
+        $api_result = $this->apiSendFB($send_data);
         if (isset($api_result->error)) {
             throw new Exception($api_result->error->message, $api_result->error->code);
         }
@@ -119,7 +162,7 @@ class lhUBA implements lhUBAInterface {
         throw new Exception('curl_init returned false');
     }
     
-    protected function apiQueryFB($data) {
+    protected function apiSendFB($data) {
         $ch = curl_init('https://graph.facebook.com/v2.6/me/messages?access_token='.$this->known_secrets['fbu']);
         if ( $ch ) {
             if (curl_setopt_array( $ch, array(
@@ -138,4 +181,19 @@ class lhUBA implements lhUBAInterface {
         throw new Exception('curl_init returned false');
     }
 
+    protected function apiGetProfileFB($psid) {
+        $ch = curl_init("https://graph.facebook.com/$psid?fields=first_name,last_name&access_token=".$this->known_secrets['fbu']);
+        if ( $ch ) {
+            if (curl_setopt_array( $ch, array(
+                CURLOPT_RETURNTRANSFER => true
+            ))) {    
+                $content=curl_exec($ch);
+                if (curl_errno($ch)) throw new Exception (curl_error ($ch).' Content provided: '.$content);
+                curl_close($ch);
+                return json_decode($content);
+            }
+            throw new Exception('curl_setopt_array returned false');
+        }
+        throw new Exception('curl_init returned false');
+    }
 }
